@@ -1,8 +1,8 @@
 {% extends 'base.html' %}
 {% block title %}التقارير{% endblock %}
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h3><i class="bi bi-bar-chart-line"></i> التقارير</h3>
+<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+    <h3 class="mb-0"><i class="bi bi-bar-chart-line"></i> التقارير</h3>
     {% if rtype == 'daily' %}
     <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#dailyReportModal">
         <i class="bi bi-plus-lg"></i> تقرير يومي جديد
@@ -14,7 +14,7 @@
     {% endif %}
 </div>
 
-<ul class="nav nav-pills mb-3">
+<ul class="nav nav-pills mb-3 flex-wrap gap-1">
     {% for key, label in REPORT_TYPES.items() %}
     <li class="nav-item">
         <a class="nav-link {{ 'active' if key == rtype }}" href="{{ url_for('reports_list', type=key) }}">التقارير {{ label }}ة</a>
@@ -69,8 +69,15 @@
 </div>
 
 {% if rtype == 'daily' %}
+<style>
+  #dailyReportModal .modal-footer{position:sticky;bottom:0;background:#fff;z-index:2;border-top:1px solid #dee2e6}
+  #dailyReportModal .upload-box{border:2px dashed #0d6efd;border-radius:.75rem;background:#f4f8ff}
+  #dailyReportModal .upload-btn{font-size:1.05rem;padding:.7rem 1rem}
+  #dailyReportModal .form-control,#dailyReportModal .form-select{font-size:16px} /* يمنع تكبير الصفحة تلقائيًا في الآيفون */
+  @media (max-width:575.98px){#dailyReportModal .modal-footer .btn{flex:1}}
+</style>
 <div class="modal fade" id="dailyReportModal" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+  <div class="modal-dialog modal-lg modal-fullscreen-sm-down">
     <div class="modal-content">
       <form method="POST" action="{{ url_for('report_new', type='daily') }}" enctype="multipart/form-data">
         <div class="modal-header">
@@ -79,11 +86,11 @@
         </div>
         <div class="modal-body">
           <div class="row g-3">
-            <div class="col-md-8">
+            <div class="col-12 col-md-8">
               <label class="form-label">1. اسم الشخص *</label>
               <input type="text" name="reporter_name" class="form-control" required value="{{ current_user.full_name }}">
             </div>
-            <div class="col-md-4">
+            <div class="col-12 col-md-4">
               <label class="form-label">تاريخ التقرير</label>
               <input type="date" name="report_date" class="form-control" value="{{ today }}" required>
             </div>
@@ -94,28 +101,41 @@
                 {% for w in work_types %}<option value="{{ w }}">{{ w }}</option>{% endfor %}
               </select>
             </div>
-            <div class="col-md-6">
+            <div class="col-6">
               <label class="form-label">3. المحطة من</label>
-              <input type="text" name="station_from" class="form-control" maxlength="50" placeholder="مثال: 12+500">
+              <input type="text" name="station_from" class="form-control" maxlength="50" placeholder="12+500">
             </div>
-            <div class="col-md-6">
+            <div class="col-6">
               <label class="form-label">المحطة إلى</label>
-              <input type="text" name="station_to" class="form-control" maxlength="50" placeholder="مثال: 13+200">
+              <input type="text" name="station_to" class="form-control" maxlength="50" placeholder="13+200">
             </div>
             <div class="col-12">
               <label class="form-label">4. تقرير المهندس حسب العمل *</label>
-              <textarea name="content" class="form-control" rows="6" required></textarea>
+              <textarea name="content" class="form-control" rows="5" required></textarea>
             </div>
             <div class="col-12">
               <label class="form-label">5. الملاحظات (إن وجدت)</label>
               <textarea name="notes" class="form-control" rows="3"></textarea>
             </div>
             <div class="col-12">
-              <div class="border rounded p-3 bg-light">
-                <label class="form-label fw-bold"><i class="bi bi-paperclip"></i> 6. المرفقات (صور، Word، PDF، Excel)</label>
-                <input type="file" id="attachInput" name="attachments" class="form-control" multiple
+              <div class="upload-box p-3">
+                <div class="fw-bold mb-2"><i class="bi bi-paperclip"></i> 6. المرفقات (صور، Word، PDF، Excel)</div>
+                <div class="row g-2">
+                  <div class="col-12 col-sm-6">
+                    <label for="attachInput" class="btn btn-primary w-100 upload-btn mb-0">
+                      <i class="bi bi-folder2-open"></i> اختيار ملفات
+                    </label>
+                  </div>
+                  <div class="col-12 col-sm-6">
+                    <label for="cameraInput" class="btn btn-outline-primary w-100 upload-btn mb-0">
+                      <i class="bi bi-camera"></i> التقاط صورة
+                    </label>
+                  </div>
+                </div>
+                <input type="file" id="attachInput" name="attachments" class="d-none" multiple
                        accept="image/*,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tif,.tiff,.pdf,.doc,.docx,.docm,.xls,.xlsx,.xlsm,.csv,.txt">
-                <div class="form-text">يمكنك إضافة الملفات على دفعات، وحذف أي ملف من القائمة قبل الحفظ. الحد الأقصى لمجموع الحجم 25 ميجابايت.</div>
+                <input type="file" id="cameraInput" class="d-none" accept="image/*" capture="environment">
+                <div class="form-text mt-2">يمكنك الإضافة على دفعات وحذف أي ملف قبل الحفظ. الحد الأقصى لمجموع الحجم 25 ميجابايت.</div>
                 <ul id="attachList" class="list-group mt-2"></ul>
                 <div id="attachInfo" class="form-text"></div>
               </div>
@@ -142,16 +162,23 @@
 </script>
 
 <script>
-    // إضافة المرفقات على دفعات مع عرض القائمة وإمكانية حذف أي ملف قبل الحفظ
+    // إضافة المرفقات على دفعات (ملفات أو كاميرا) مع إمكانية الحذف قبل الحفظ
     (function () {
         const input = document.getElementById('attachInput');
+        const camera = document.getElementById('cameraInput');
         if (!input) return;
         const list = document.getElementById('attachList');
         const info = document.getElementById('attachInfo');
         const submitBtn = document.getElementById('dailySubmit');
         const MAX = 25 * 1024 * 1024;
-        let dt = new DataTransfer();
-
+        let dt;
+        try { dt = new DataTransfer(); } catch (e) { dt = null; }
+        if (!dt) {
+            // متصفح قديم: نعرض حقل الملفات الأصلي كما هو
+            input.classList.remove('d-none');
+            document.querySelectorAll('label[for="attachInput"],label[for="cameraInput"]').forEach(l => l.classList.add('d-none'));
+            return;
+        }
         function fmt(n) {
             return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
         }
@@ -161,13 +188,13 @@
             Array.from(dt.files).forEach((f, i) => {
                 total += f.size;
                 const li = document.createElement('li');
-                li.className = 'list-group-item d-flex justify-content-between align-items-center py-1';
+                li.className = 'list-group-item d-flex justify-content-between align-items-center gap-2 py-2';
                 const name = document.createElement('span');
                 name.className = 'text-break';
                 name.textContent = f.name + ' (' + fmt(f.size) + ')';
                 const del = document.createElement('button');
                 del.type = 'button';
-                del.className = 'btn btn-sm btn-outline-danger';
+                del.className = 'btn btn-sm btn-outline-danger flex-shrink-0';
                 del.innerHTML = '<i class="bi bi-x-lg"></i>';
                 del.onclick = () => {
                     const next = new DataTransfer();
@@ -185,11 +212,21 @@
             info.className = 'form-text' + (over ? ' text-danger fw-bold' : '');
             submitBtn.disabled = over;
         }
-        input.addEventListener('change', () => {
-            Array.from(input.files).forEach(f => dt.items.add(f));
+        function addFiles(files) {
+            Array.from(files).forEach(f => dt.items.add(f));
             input.files = dt.files;
             render();
+        }
+        input.addEventListener('change', () => {
+            // المتصفح يستبدل input.files بالاختيار الجديد، فنضيف الجديد إلى القائمة المتراكمة
+            const picked = Array.from(input.files).filter(f => !Array.from(dt.files).includes(f));
+            const old = Array.from(dt.files);
+            const keep = new DataTransfer();
+            old.forEach(f => keep.items.add(f));
+            picked.forEach(f => { if (!old.some(o => o.name === f.name && o.size === f.size && o.lastModified === f.lastModified)) keep.items.add(f); });
+            dt = keep; input.files = dt.files; render();
         });
+        camera.addEventListener('change', () => { addFiles(camera.files); camera.value = ''; });
     })();
 </script>
 {% endblock %}
