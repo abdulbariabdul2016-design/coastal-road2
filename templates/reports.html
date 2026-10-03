@@ -41,7 +41,7 @@
         {% endif %}
     </thead>
     <tbody>
-        {% for r in reports %}
+        {% for r in reports if current_user.is_admin or r.created_by_id == current_user.id %}
         <tr>
             {% if rtype == 'daily' %}
             <td>{{ r.period_start }}</td>
