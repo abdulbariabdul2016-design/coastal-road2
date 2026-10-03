@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}تقرير {{ REPORT_TYPES[rtype] }} جديد{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8"><div class="card"><div class="card-body">
+<h3 class="mb-3">تقرير {{ REPORT_TYPES[rtype] }} جديد</h3>
+<form method="post">
+  <input type="hidden" name="type" value="{{ rtype }}">
+  <div class="mb-3"><label class="form-label">العنوان</label>
+    <input class="form-control" name="title" required></div>
+  <div class="mb-3"><label class="form-label">
+    {{ 'التاريخ' if rtype == 'daily' else 'أي تاريخ داخل الأسبوع (يبدأ من السبت)' if rtype == 'weekly' else 'أي تاريخ داخل الشهر' }}</label>
+    <input class="form-control" type="date" name="report_date" value="{{ today }}" required></div>
+  <div class="mb-3"><label class="form-label">محتوى التقرير</label>
+    <textarea class="form-control" name="content" rows="10" required></textarea></div>
+  <button class="btn btn-primary">حفظ التقرير</button>
+  <a class="btn btn-secondary" href="{{ url_for('reports_list', type=rtype) }}">رجوع</a>
+</form></div></div></div></div>
+{% endblock %}

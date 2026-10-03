@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% block title %}المستخدمون{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="bi bi-people"></i> إدارة المستخدمين والصلاحيات</h3>
+    <a href="{{ url_for('user_new') }}" class="btn btn-primary"><i class="bi bi-person-plus"></i> إضافة مستخدم</a>
+</div>
+
+<div class="table-responsive">
+<table class="table table-hover bg-white shadow-sm">
+    <thead class="table-light">
+        <tr>
+            <th>الاسم الكامل</th>
+            <th>اسم المستخدم</th>
+            <th>الدور</th>
+            <th>الأقسام المسموحة</th>
+            <th>الحالة</th>
+            <th>تاريخ الإنشاء</th>
+            <th>إجراءات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for u in users %}
+        <tr>
+            <td>{{ u.full_name }}</td>
+            <td>{{ u.username }}</td>
+            <td><span class="badge {% if u.is_admin %}bg-danger{% else %}bg-primary{% endif %}">{{ 'أدمن' if u.is_admin else 'موظف' }}</span></td>
+            <td>
+                {% if u.is_admin %}<span class="badge bg-dark">كل الأقسام</span>
+                {% else %}
+                    {% for key, label in PERMISSIONS %}{% if key in u.permission_list %}<span class="badge bg-info text-dark">{{ label }}</span> {% endif %}{% endfor %}
+                    {% if not u.permission_list %}<span class="text-muted small">لا شيء</span>{% endif %}
+                {% endif %}
+            </td>
+            <td>
+                {% if u.is_active_user %}<span class="badge bg-success">مفعّل</span>
+                {% else %}<span class="badge bg-secondary">معطّل</span>{% endif %}
+            </td>
+            <td class="text-muted small">{{ u.created_at.strftime('%Y-%m-%d') }}</td>
+            <td class="text-nowrap">
+                <a href="{{ url_for('user_edit', user_id=u.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i> تعديل / صلاحيات</a>
+                {% if u.id != current_user.id %}
+                <form method="POST" action="{{ url_for('user_toggle_active', user_id=u.id) }}" class="d-inline">
+                    <button class="btn btn-sm btn-outline-warning">
+                        {{ 'تعطيل' if u.is_active_user else 'تفعيل' }}
+                    </button>
+                </form>
+                <form method="POST" action="{{ url_for('user_delete', user_id=u.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف هذا المستخدم؟');" class="d-inline">
+                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+                {% else %}
+                <span class="text-muted small">(حسابك)</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

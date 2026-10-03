@@ -1,0 +1,152 @@
+{% extends 'base.html' %}
+{% block title %}الخريطة{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="bi bi-geo-alt"></i> خريطة الطريق الساحلي</h3>
+    <div class="d-flex align-items-center gap-2">
+        <a href="{{ url_for('works_list') }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-tools"></i> حصر الأعمال</a>
+        <a href="{{ url_for('work_new') }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg"></i> إضافة عمل</a>
+        <span class="badge bg-info">● الجهة اليمنى</span>
+        <span class="badge bg-secondary">● الجهة اليسرى</span>
+        <span class="badge bg-success">● المحطات ثابتة</span>
+    </div>
+</div>
+
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <form method="POST" action="{{ url_for('stations_upload') }}" enctype="multipart/form-data" class="row g-2 align-items-end">
+            <div class="col-md-8">
+                <label for="stations_file" class="form-label">ملف محطات الطريق (KMZ أو KML)</label>
+                <input id="stations_file" type="file" name="stations_file" class="form-control" accept=".kmz,.kml" required>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-primary w-100"><i class="bi bi-upload"></i> تحميل المحطات</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div id="mainMap" style="height: 70vh; width: 100%;"></div>
+    </div>
+</div>
+<p class="text-muted small mt-2">
+    <i class="bi bi-info-circle"></i>
+    تُعرض على الخريطة سجلات الأعمال التي تم تحديد إحداثياتها الجغرافية (GPS) عند إضافتها من صفحة "حصر الأعمال".
+</p>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    .station-pin {
+        width: 22px;
+        height: 22px;
+        border: 2px solid #fff;
+        border-radius: 50% 50% 50% 0;
+        background: #087fdb;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, .45);
+        transform: rotate(-45deg);
+    }
+
+    .station-pin span {
+        display: none;
+        color: #000;
+        font-size: 10px;
+        font-weight: 700;
+        line-height: 18px;
+        text-align: center;
+        transform: rotate(45deg);
+        white-space: nowrap;
+    }
+
+    .station-pin.show-number span {
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const map = L.map('mainMap').setView([20.0, 40.0], 6);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const stationLayer = L.layerGroup().addTo(map);
+    const roadLayer = L.layerGroup().addTo(map);
+    const workLayer = L.layerGroup().addTo(map);
+    L.control.layers(null, {
+        'سجلات الأعمال': workLayer
+    }).addTo(map);
+
+    const escapeHtml = value => String(value || '').replace(/[&<>"']/g, character => ({
+        '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+    }[character]));
+
+    const stationsRequest = fetch("{{ url_for('stations_geo') }}")
+        .then(res => res.json());
+    const worksRequest = fetch("{{ url_for('works_geo') }}")
+        .then(res => res.json());
+
+    Promise.all([stationsRequest, worksRequest]).then(([mapData, points]) => {
+            const stations = mapData.stations || [];
+            const bounds = [];
+            (mapData.lines || []).forEach(path => {
+                L.polyline(path, {
+                    color: '#087fdb',
+                    weight: 4,
+                    opacity: 0.85
+                }).addTo(roadLayer);
+                path.forEach(coordinate => bounds.push(coordinate));
+            });
+            stations.forEach(station => {
+                const marker = L.marker([station.lat, station.lng], {
+                    icon: L.divIcon({
+                        className: 'station-icon',
+                        html: `<div class="station-pin"><span>${escapeHtml(station.name)}</span></div>`,
+                        iconSize: [22, 22],
+                        iconAnchor: [11, 22],
+                        popupAnchor: [0, -22]
+                    })
+                }).addTo(stationLayer);
+                marker.bindPopup(`<strong>${escapeHtml(station.name)}</strong>${station.description ? '<br>' + escapeHtml(station.description) : ''}`);
+                bounds.push([station.lat, station.lng]);
+            });
+            points.forEach(p => {
+                const color = p.side === 'يمين' ? '#0dcaf0' : '#6c757d';
+                const marker = L.circleMarker([p.lat, p.lng], {
+                    radius: 8,
+                    fillColor: color,
+                    color: '#333',
+                    weight: 1,
+                    fillOpacity: 0.9
+                }).addTo(workLayer);
+
+                const popupHtml = `
+                    <strong>${p.title}</strong><br>
+                    الجهة: ${p.side}<br>
+                    الكيلومتر: ${p.km_start}${p.km_end ? ' - ' + p.km_end : ''}<br>
+                    الحالة: ${p.status}<br>
+                    ${p.work_date ? 'التاريخ: ' + p.work_date + '<br>' : ''}
+                    ${p.description ? p.description : ''}
+                `;
+                marker.bindPopup(popupHtml);
+                bounds.push([p.lat, p.lng]);
+            });
+            if (bounds.length) map.fitBounds(bounds, {padding: [40, 40]});
+            updateStationNumbers();
+        });
+
+    function updateStationNumbers() {
+        const showNumbers = map.getZoom() >= 11;
+        document.querySelectorAll('.station-pin').forEach(pin => {
+            pin.classList.toggle('show-number', showNumbers);
+        });
+    }
+    map.on('zoomend', updateStationNumbers);
+    map.whenReady(updateStationNumbers);
+</script>
+{% endblock %}

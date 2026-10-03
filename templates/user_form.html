@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'تعديل مستخدم' if user else 'إضافة مستخدم' }}{% endblock %}
+{% block content %}
+<h3 class="mb-4"><i class="bi bi-person-plus"></i> {{ 'تعديل المستخدم: ' ~ user.full_name if user else 'إضافة مستخدم جديد' }}</h3>
+
+<div class="card shadow-sm col-lg-6">
+<div class="card-body">
+<form method="POST">
+    <div class="mb-3">
+        <label class="form-label">الاسم الكامل *</label>
+        <input type="text" name="full_name" class="form-control" required value="{{ user.full_name if user else '' }}">
+    </div>
+    {% if not user %}
+    <div class="mb-3">
+        <label class="form-label">اسم المستخدم (للدخول) *</label>
+        <input type="text" name="username" class="form-control" required>
+    </div>
+    {% endif %}
+    {% if not (user and is_fixed_admin) %}
+    <div class="mb-3">
+        <label class="form-label">{{ 'كلمة مرور جديدة (اتركها فارغة لعدم التغيير)' if user else 'كلمة المرور *' }}</label>
+        <input type="password" name="password" class="form-control" {{ '' if user else 'required' }}>
+    </div>
+    {% endif %}
+    {% if not (user and (is_fixed_admin or user.id == current_user.id)) %}
+    <div class="mb-3">
+        <label class="form-label">الدور</label>
+        <select name="role" id="roleSelect" class="form-select">
+            <option value="employee" {{ 'selected' if user and not user.is_admin }}>موظف</option>
+            <option value="admin" {{ 'selected' if user and user.is_admin }}>أدمن (كل الأقسام)</option>
+        </select>
+    </div>
+    {% endif %}
+    <div class="mb-3" id="permsBox">
+        <label class="form-label fw-bold">الأقسام التي تظهر لهذا الموظف</label>
+        {% for key, label in PERMISSIONS %}
+        <div class="form-check">
+            <input class="form-check-input" type="checkbox" name="permissions" value="{{ key }}" id="p_{{ key }}"
+                   {{ 'checked' if user and key in user.permission_list }}>
+            <label class="form-check-label" for="p_{{ key }}">{{ label }}</label>
+        </div>
+        {% endfor %}
+        <div class="form-text">صفحة المستخدمين للأدمن فقط، والأدمن يرى كل الأقسام دائمًا.</div>
+    </div>
+    <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+    <a href="{{ url_for('users_list') }}" class="btn btn-outline-secondary">إلغاء</a>
+</form>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const roleSel = document.getElementById('roleSelect');
+    const permsBox = document.getElementById('permsBox');
+    function syncPerms() { if (roleSel) permsBox.style.opacity = roleSel.value === 'admin' ? '.5' : '1'; }
+    if (roleSel) { roleSel.addEventListener('change', syncPerms); syncPerms(); }
+</script>
+{% endblock %}

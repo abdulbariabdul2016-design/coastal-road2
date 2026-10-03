@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}إضافة للأرشيف{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7"><div class="card"><div class="card-body">
+<h3 class="mb-3">إضافة للأرشيف</h3>
+<form method="post" enctype="multipart/form-data">
+  <div class="mb-3"><label class="form-label">العنوان</label><input class="form-control" name="title" required></div>
+  <div class="mb-3"><label class="form-label">النوع</label>
+    <select class="form-select" name="category" required>
+      {% for c in categories %}<option value="{{ c }}">{{ c }}</option>{% endfor %}</select></div>
+  <div class="mb-3"><label class="form-label">الوصف</label><textarea class="form-control" name="description" rows="3"></textarea></div>
+  <div class="row">
+    <div class="col-md-6 mb-3"><label class="form-label">الجهة (اختياري)</label>
+      <select class="form-select" name="side"><option value="">عام</option>
+        {% for s in sides %}<option value="{{ s }}">{{ s }}</option>{% endfor %}</select></div>
+    <div class="col-md-6 mb-3"><label class="form-label">الكيلومتر (اختياري)</label>
+      <input class="form-control" type="number" step="0.01" name="km_point"></div>
+  </div>
+  <div class="mb-3"><label class="form-label">الملف (PDF / Word / Excel / صورة، حتى 25 ميجابايت)</label>
+    <input class="form-control" type="file" name="file"></div>
+  <button class="btn btn-primary">حفظ</button>
+  <a class="btn btn-secondary" href="{{ url_for('archive_list') }}">رجوع</a>
+</form></div></div></div></div>
+{% endblock %}

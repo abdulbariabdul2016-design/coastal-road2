@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}الأرشفة{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">الأرشفة</h3>
+  <a class="btn btn-primary" href="{{ url_for('archive_new') }}">+ إضافة للأرشيف</a>
+</div>
+<form class="row g-2 mb-3" method="get">
+  <div class="col-md-4"><input class="form-control" name="q" placeholder="بحث بالعنوان أو الوصف" value="{{ q }}"></div>
+  <div class="col-md-3"><select class="form-select" name="category">
+    <option value="">كل الأنواع</option>
+    {% for c in categories %}<option value="{{ c }}" {{ 'selected' if c == selected_category }}>{{ c }}</option>{% endfor %}
+  </select></div>
+  <div class="col-md-2"><button class="btn btn-outline-primary w-100">بحث</button></div>
+</form>
+<div class="card"><div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+  <thead><tr><th>العنوان</th><th>النوع</th><th>الموقع</th><th>أضافه</th><th>التاريخ</th><th></th></tr></thead>
+  <tbody>
+  {% for d in documents %}
+  <tr>
+    <td>{{ d.title }}{% if d.description %}<div class="small text-muted">{{ d.description }}</div>{% endif %}</td>
+    <td>{{ d.category }}</td>
+    <td>{% if d.side %}{{ d.side }}{% endif %}{% if d.km_point is not none %} كم {{ d.km_point }}{% endif %}</td>
+    <td>{{ d.uploaded_by.full_name if d.uploaded_by else '-' }}</td>
+    <td>{{ d.created_at.strftime('%Y-%m-%d') }}</td>
+    <td class="text-nowrap">
+      {% if d.has_file %}<a class="btn btn-sm btn-outline-primary" href="{{ url_for('archive_download', doc_id=d.id) }}">تحميل</a>{% endif %}
+      {% if current_user.is_admin or d.uploaded_by_id == current_user.id %}
+      <form class="d-inline" method="post" action="{{ url_for('archive_delete', doc_id=d.id) }}" onsubmit="return confirm('حذف العنصر؟');">
+        <button class="btn btn-sm btn-outline-danger">حذف</button></form>
+      {% endif %}
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="text-center text-muted py-4">الأرشيف فارغ</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

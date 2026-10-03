@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block title %}{{ report.title }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="bi bi-file-earmark-text"></i> تقرير {{ report.type_label }}</h3>
+    <button class="btn btn-outline-secondary btn-sm d-print-none" onclick="window.print()"><i class="bi bi-printer"></i> طباعة</button>
+</div>
+
+<div class="card shadow-sm mb-3"><div class="card-body">
+    {% if report.report_type == 'daily' %}
+    <div class="row g-3 mb-3">
+        <div class="col-md-3"><div class="text-muted small">التاريخ</div><div class="fw-bold">{{ report.period_start }}</div></div>
+        <div class="col-md-3"><div class="text-muted small">اسم الشخص</div><div class="fw-bold">{{ report.reporter_name or '-' }}</div></div>
+        <div class="col-md-3"><div class="text-muted small">نوع العمل</div><div class="fw-bold">{{ report.work_type or '-' }}</div></div>
+        <div class="col-md-3"><div class="text-muted small">المحطة</div>
+            <div class="fw-bold">من {{ report.station_from or '-' }} إلى {{ report.station_to or '-' }}</div></div>
+    </div>
+    {% else %}
+    <h5>{{ report.title }}</h5>
+    <div class="text-muted mb-3">{{ report.period_start }}{% if report.period_start != report.period_end %} → {{ report.period_end }}{% endif %}
+        • {{ report.created_by.full_name if report.created_by else '-' }}</div>
+    <div class="mb-3">
+        <span class="badge bg-dark">أعمال الفترة {{ summary.total }}</span>
+        <span class="badge bg-success">منتهي {{ summary.done }}</span>
+        <span class="badge bg-warning text-dark">قيد التنفيذ {{ summary.in_progress }}</span>
+        <span class="badge bg-secondary">متوقف {{ summary.stopped }}</span>
+    </div>
+    {% endif %}
+
+    <h6 class="fw-bold">{{ 'تقرير المهندس' if report.report_type == 'daily' else 'محتوى التقرير' }}</h6>
+    <div class="mb-3" style="white-space: pre-wrap;">{{ report.content }}</div>
+
+    {% if report.notes %}
+    <h6 class="fw-bold">الملاحظات</h6>
+    <div class="mb-3" style="white-space: pre-wrap;">{{ report.notes }}</div>
+    {% endif %}
+
+    {% if report.attachments %}
+    <h6 class="fw-bold">المرفقات</h6>
+    <div class="row g-2">
+        {% for a in report.attachments %}
+        <div class="col-6 col-md-3">
+            <div class="card h-100">
+                {% if a.is_image %}
+                <a href="{{ url_for('report_attachment', att_id=a.id) }}" target="_blank" rel="noopener">
+                    <img src="{{ url_for('report_attachment', att_id=a.id) }}" class="card-img-top" alt="{{ a.original_file_name }}" style="height:140px;object-fit:cover;">
+                </a>
+                {% endif %}
+                <div class="card-body p-2 small text-break">
+                    <i class="bi bi-paperclip"></i> {{ a.original_file_name }}
+                    <a class="btn btn-sm btn-outline-success w-100 mt-1" href="{{ url_for('report_attachment', att_id=a.id) }}"><i class="bi bi-download"></i> تحميل</a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div></div>
+
+<a class="btn btn-outline-secondary d-print-none" href="{{ url_for('reports_list', type=report.report_type) }}">رجوع</a>
+{% endblock %}

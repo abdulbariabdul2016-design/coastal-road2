@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+{% block title %}حصر الأعمال{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="bi bi-tools"></i> حصر الأعمال - الطريق الساحلي</h3>
+    <a href="{{ url_for('work_new') }}" class="btn btn-primary"><i class="bi bi-plus-lg"></i> إضافة سجل عمل</a>
+</div>
+
+<form method="GET" class="row g-2 mb-3">
+    <div class="col-auto">
+        <select name="side" class="form-select" onchange="this.form.submit()">
+            <option value="">كل الجهات</option>
+            {% for s in sides %}
+            <option value="{{ s }}" {% if s==selected_side %}selected{% endif %}>{{ s }}</option>
+            {% endfor %}
+        </select>
+    </div>
+    <div class="col-auto">
+        <select name="status" class="form-select" onchange="this.form.submit()">
+            <option value="">كل الحالات</option>
+            {% for st in statuses %}
+            <option value="{{ st }}" {% if st==selected_status %}selected{% endif %}>{{ st }}</option>
+            {% endfor %}
+        </select>
+    </div>
+</form>
+
+<div class="table-responsive">
+<table class="table table-hover bg-white shadow-sm">
+    <thead class="table-light">
+        <tr>
+            <th>العنوان</th>
+            <th>الجهة</th>
+            <th>من كم - إلى كم</th>
+            <th>الحالة</th>
+            <th>تاريخ العمل</th>
+            <th>إحداثيات GPS</th>
+            <th>بواسطة</th>
+            <th>إجراءات</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for w in works %}
+        <tr>
+            <td>{{ w.title }}</td>
+            <td><span class="badge {% if w.side=='يمين' %}bg-info{% else %}bg-secondary{% endif %}">{{ w.side }}</span></td>
+            <td>{{ w.km_start }}{% if w.km_end %} - {{ w.km_end }}{% endif %}</td>
+            <td>
+                {% if w.status == 'منتهي' %}<span class="badge bg-success">{{ w.status }}</span>
+                {% elif w.status == 'متوقف' %}<span class="badge bg-danger">{{ w.status }}</span>
+                {% else %}<span class="badge bg-warning text-dark">{{ w.status }}</span>{% endif %}
+            </td>
+            <td>{{ w.work_date.strftime('%Y-%m-%d') if w.work_date else '-' }}</td>
+            <td class="small">
+                {% if w.latitude and w.longitude %}
+                    {{ '%.5f'|format(w.latitude) }}, {{ '%.5f'|format(w.longitude) }}
+                {% else %}
+                    <span class="text-muted">غير محدد</span>
+                {% endif %}
+            </td>
+            <td>{{ w.created_by.full_name if w.created_by else '-' }}</td>
+            <td>
+                {% if current_user.is_admin or w.created_by_id == current_user.id %}
+                <a href="{{ url_for('work_edit', work_id=w.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                <form method="POST" action="{{ url_for('work_delete', work_id=w.id) }}" onsubmit="return confirm('هل أنت متأكد من الحذف؟');" class="d-inline">
+                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+                {% endif %}
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="8" class="text-center text-muted py-4">لا توجد سجلات مطابقة</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+{% endblock %}

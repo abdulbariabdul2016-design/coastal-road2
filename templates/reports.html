@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}التقارير{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h3><i class="bi bi-bar-chart-line"></i> التقارير</h3>
+    {% if rtype == 'daily' %}
+    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#dailyReportModal">
+        <i class="bi bi-plus-lg"></i> تقرير يومي جديد
+    </button>
+    {% else %}
+    <a class="btn btn-primary" href="{{ url_for('report_new', type=rtype) }}">
+        <i class="bi bi-plus-lg"></i> تقرير {{ REPORT_TYPES[rtype] }} جديد
+    </a>
+    {% endif %}
+</div>
+
+<ul class="nav nav-pills mb-3">
+    {% for key, label in REPORT_TYPES.items() %}
+    <li class="nav-item">
+        <a class="nav-link {{ 'active' if key == rtype }}" href="{{ url_for('reports_list', type=key) }}">التقارير {{ label }}ة</a>
+    </li>
+    {% endfor %}
+</ul>
+
+<div class="card shadow-sm mb-3"><div class="card-body">
+    <div class="fw-bold mb-2">ملخص أعمال الحصر للفترة الحالية
+        ({{ current_start }}{% if current_start != current_end %} إلى {{ current_end }}{% endif %})</div>
+    <span class="badge bg-dark">الإجمالي {{ current_summary.total }}</span>
+    <span class="badge bg-success">منتهي {{ current_summary.done }}</span>
+    <span class="badge bg-warning text-dark">قيد التنفيذ {{ current_summary.in_progress }}</span>
+    <span class="badge bg-secondary">متوقف {{ current_summary.stopped }}</span>
+</div></div>
+
+<div class="table-responsive">
+<table class="table table-hover bg-white shadow-sm align-middle">
+    <thead class="table-light">
+        {% if rtype == 'daily' %}
+        <tr><th>التاريخ</th><th>اسم الشخص</th><th>نوع العمل</th><th>المحطة</th><th>مرفقات</th><th>إجراءات</th></tr>
+        {% else %}
+        <tr><th>العنوان</th><th>الفترة</th><th>كاتب التقرير</th><th>مرفقات</th><th>إجراءات</th></tr>
+        {% endif %}
+    </thead>
+    <tbody>
+        {% for r in reports %}
+        <tr>
+            {% if rtype == 'daily' %}
+            <td>{{ r.period_start }}</td>
+            <td>{{ r.reporter_name or '-' }}</td>
+            <td><span class="badge bg-primary">{{ r.work_type or '-' }}</span></td>
+            <td>{% if r.station_from or r.station_to %}من {{ r.station_from or '-' }} إلى {{ r.station_to or '-' }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
+            {% else %}
+            <td>{{ r.title }}</td>
+            <td>{{ r.period_start }}{% if r.period_start != r.period_end %} → {{ r.period_end }}{% endif %}</td>
+            <td>{{ r.created_by.full_name if r.created_by else '-' }}</td>
+            {% endif %}
+            <td>{% if r.attachments %}<i class="bi bi-paperclip"></i> {{ r.attachments|length }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
+            <td class="text-nowrap">
+                <a href="{{ url_for('report_view', report_id=r.id) }}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i> عرض</a>
+                <form method="POST" action="{{ url_for('report_delete', report_id=r.id) }}" onsubmit="return confirm('هل أنت متأكد من حذف التقرير؟');" class="d-inline">
+                    <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button>
+                </form>
+            </td>
+        </tr>
+        {% else %}
+        <tr><td colspan="6" class="text-center text-muted py-4">لا توجد تقارير بعد</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+</div>
+
+{% if rtype == 'daily' %}
+<div class="modal fade" id="dailyReportModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg modal-dialog-scrollable">
+    <div class="modal-content">
+      <form method="POST" action="{{ url_for('report_new', type='daily') }}" enctype="multipart/form-data">
+        <div class="modal-header">
+          <h5 class="modal-title"><i class="bi bi-journal-plus"></i> تقرير يومي جديد</h5>
+          <button type="button" class="btn-close ms-0 me-auto" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <div class="row g-3">
+            <div class="col-md-8">
+              <label class="form-label">1. اسم الشخص *</label>
+              <input type="text" name="reporter_name" class="form-control" required value="{{ current_user.full_name }}">
+            </div>
+            <div class="col-md-4">
+              <label class="form-label">تاريخ التقرير</label>
+              <input type="date" name="report_date" class="form-control" value="{{ today }}" required>
+            </div>
+            <div class="col-12">
+              <label class="form-label">2. نوع العمل *</label>
+              <select name="work_type" class="form-select" required>
+                <option value="" disabled selected>اختر نوع العمل</option>
+                {% for w in work_types %}<option value="{{ w }}">{{ w }}</option>{% endfor %}
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">3. المحطة من</label>
+              <input type="text" name="station_from" class="form-control" maxlength="50" placeholder="مثال: 12+500">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">المحطة إلى</label>
+              <input type="text" name="station_to" class="form-control" maxlength="50" placeholder="مثال: 13+200">
+            </div>
+            <div class="col-12">
+              <label class="form-label">4. تقرير المهندس حسب العمل *</label>
+              <textarea name="content" class="form-control" rows="6" required></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">5. الملاحظات (إن وجدت)</label>
+              <textarea name="notes" class="form-control" rows="3"></textarea>
+            </div>
+            <div class="col-12">
+              <label class="form-label">6. المرفقات (صور أو ملفات)</label>
+              <input type="file" name="attachments" class="form-control" multiple
+                     accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,.tif,.tiff,.pdf,.doc,.docx,.docm,.xls,.xlsx,.xlsm,.csv,.txt">
+              <div class="form-text">يمكن اختيار أكثر من ملف. الحد الأقصى لمجموع الحجم 25 ميجابايت.</div>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ التقرير</button>
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

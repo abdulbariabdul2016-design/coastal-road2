@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% block title %}سجل عمل{% endblock %}
+{% block content %}
+<h3 class="mb-4"><i class="bi bi-tools"></i> {{ 'تعديل سجل عمل' if work else 'إضافة سجل عمل جديد' }}</h3>
+
+<div class="row">
+<div class="col-lg-7">
+<div class="card shadow-sm">
+<div class="card-body">
+<form method="POST">
+    <div class="row g-3">
+        <div class="col-12">
+            <label class="form-label">عنوان العمل *</label>
+            <input type="text" name="title" class="form-control" required value="{{ work.title if work else '' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">الجهة *</label>
+            <select name="side" class="form-select" required>
+                {% for s in sides %}
+                <option value="{{ s }}" {% if work and work.side==s %}selected{% endif %}>{{ s }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">من كيلومتر * (0 - {{ road_length }})</label>
+            <input type="number" step="0.01" min="0" max="{{ road_length }}" name="km_start" class="form-control" required value="{{ work.km_start if work else '' }}">
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">إلى كيلومتر (اختياري)</label>
+            <input type="number" step="0.01" min="0" max="{{ road_length }}" name="km_end" class="form-control" value="{{ work.km_end if work and work.km_end else '' }}">
+        </div>
+
+        <div class="col-12">
+            <label class="form-label">وصف العمل</label>
+            <textarea name="description" class="form-control" rows="3">{{ work.description if work else '' }}</textarea>
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">الحالة</label>
+            <select name="status" class="form-select">
+                {% for st in statuses %}
+                <option value="{{ st }}" {% if work and work.status==st %}selected{% endif %}>{{ st }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">تاريخ العمل</label>
+            <input type="date" name="work_date" class="form-control" value="{{ work.work_date.strftime('%Y-%m-%d') if work and work.work_date else '' }}">
+        </div>
+
+        <div class="col-md-6">
+            <label class="form-label">خط العرض Latitude</label>
+            <input type="number" step="any" name="latitude" id="lat_input" class="form-control" value="{{ work.latitude if work and work.latitude else '' }}">
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">خط الطول Longitude</label>
+            <input type="number" step="any" name="longitude" id="lng_input" class="form-control" value="{{ work.longitude if work and work.longitude else '' }}">
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+        <a href="{{ url_for('works_list') }}" class="btn btn-outline-secondary">إلغاء</a>
+    </div>
+</form>
+</div>
+</div>
+</div>
+
+<div class="col-lg-5">
+    <div class="card shadow-sm">
+        <div class="card-header">حدد الموقع على الخريطة (اختياري)</div>
+        <div class="card-body p-0">
+            <div id="pickerMap" style="height: 400px;"></div>
+        </div>
+        <div class="card-footer text-muted small">انقر على الخريطة لتحديد إحداثيات موقع العمل بدقة</div>
+    </div>
+</div>
+</div>
+{% endblock %}
+
+{% block extra_head %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    const startLat = {{ work.latitude if work and work.latitude else 20.0 }};
+    const startLng = {{ work.longitude if work and work.longitude else 40.0 }};
+    const map = L.map('pickerMap').setView([startLat, startLng], {{ 10 if work and work.latitude else 5 }});
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    let marker = null;
+    {% if work and work.latitude and work.longitude %}
+    marker = L.marker([{{ work.latitude }}, {{ work.longitude }}]).addTo(map);
+    {% endif %}
+
+    map.on('click', function(e) {
+        const {lat, lng} = e.latlng;
+        document.getElementById('lat_input').value = lat.toFixed(6);
+        document.getElementById('lng_input').value = lng.toFixed(6);
+        if (marker) {
+            marker.setLatLng(e.latlng);
+        } else {
+            marker = L.marker(e.latlng).addTo(map);
+        }
+    });
+</script>
+{% endblock %}

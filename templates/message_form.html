@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block title %}رسالة جديدة{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8"><div class="card"><div class="card-body">
+<h3 class="mb-3">رسالة جديدة</h3>
+<form method="post">
+  <div class="mb-3"><label class="form-label">إلى</label>
+    <select class="form-select" name="recipient" required>
+      <option value="">اختر المستلم</option>
+      {% if current_user.is_admin %}<option value="all">جميع المستخدمين</option>{% endif %}
+      {% for u in recipients %}<option value="{{ u.id }}" {{ 'selected' if prefill_to == u.id|string }}>{{ u.full_name }}</option>{% endfor %}
+    </select></div>
+  <div class="mb-3"><label class="form-label">الموضوع</label>
+    <input class="form-control" name="subject" required value="{{ prefill_subject }}"></div>
+  <div class="mb-3"><label class="form-label">الرسالة</label>
+    <textarea class="form-control" name="body" rows="8" required></textarea></div>
+  <button class="btn btn-primary">إرسال</button>
+  <a class="btn btn-secondary" href="{{ url_for('messages_list') }}">رجوع</a>
+</form></div></div></div></div>
+{% endblock %}
