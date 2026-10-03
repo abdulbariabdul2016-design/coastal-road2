@@ -128,3 +128,12 @@
 </div>
 {% endif %}
 {% endblock %}
+
+{% block extra_scripts %}
+<script>
+    // ملف style.css يجعل كل عناصر body ذات z-index:1 فتصبح النافذة داخل طبقة أدنى من الخلفية الباهتة.
+    // نقل النافذة لتكون ابنًا مباشرًا لـ body يحل المشكلة (كما توصي به وثائق Bootstrap).
+    const dailyModal = document.getElementById('dailyReportModal');
+    if (dailyModal) document.body.appendChild(dailyModal);
+</script>
+{% endblock %}
