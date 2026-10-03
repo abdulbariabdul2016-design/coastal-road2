@@ -111,15 +111,19 @@
               <textarea name="notes" class="form-control" rows="3"></textarea>
             </div>
             <div class="col-12">
-              <label class="form-label">6. المرفقات (صور أو ملفات)</label>
-              <input type="file" name="attachments" class="form-control" multiple
-                     accept=".jpg,.jpeg,.png,.gif,.webp,.bmp,.tif,.tiff,.pdf,.doc,.docx,.docm,.xls,.xlsx,.xlsm,.csv,.txt">
-              <div class="form-text">يمكن اختيار أكثر من ملف. الحد الأقصى لمجموع الحجم 25 ميجابايت.</div>
+              <div class="border rounded p-3 bg-light">
+                <label class="form-label fw-bold"><i class="bi bi-paperclip"></i> 6. المرفقات (صور، Word، PDF، Excel)</label>
+                <input type="file" id="attachInput" name="attachments" class="form-control" multiple
+                       accept="image/*,.jpg,.jpeg,.png,.gif,.webp,.bmp,.tif,.tiff,.pdf,.doc,.docx,.docm,.xls,.xlsx,.xlsm,.csv,.txt">
+                <div class="form-text">يمكنك إضافة الملفات على دفعات، وحذف أي ملف من القائمة قبل الحفظ. الحد الأقصى لمجموع الحجم 25 ميجابايت.</div>
+                <ul id="attachList" class="list-group mt-2"></ul>
+                <div id="attachInfo" class="form-text"></div>
+              </div>
             </div>
           </div>
         </div>
         <div class="modal-footer">
-          <button type="submit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ التقرير</button>
+          <button type="submit" id="dailySubmit" class="btn btn-primary"><i class="bi bi-save"></i> حفظ التقرير</button>
           <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">إلغاء</button>
         </div>
       </form>
@@ -135,5 +139,57 @@
     // نقل النافذة لتكون ابنًا مباشرًا لـ body يحل المشكلة (كما توصي به وثائق Bootstrap).
     const dailyModal = document.getElementById('dailyReportModal');
     if (dailyModal) document.body.appendChild(dailyModal);
+</script>
+
+<script>
+    // إضافة المرفقات على دفعات مع عرض القائمة وإمكانية حذف أي ملف قبل الحفظ
+    (function () {
+        const input = document.getElementById('attachInput');
+        if (!input) return;
+        const list = document.getElementById('attachList');
+        const info = document.getElementById('attachInfo');
+        const submitBtn = document.getElementById('dailySubmit');
+        const MAX = 25 * 1024 * 1024;
+        let dt = new DataTransfer();
+
+        function fmt(n) {
+            return n > 1048576 ? (n / 1048576).toFixed(1) + ' MB' : Math.max(1, Math.round(n / 1024)) + ' KB';
+        }
+        function render() {
+            list.innerHTML = '';
+            let total = 0;
+            Array.from(dt.files).forEach((f, i) => {
+                total += f.size;
+                const li = document.createElement('li');
+                li.className = 'list-group-item d-flex justify-content-between align-items-center py-1';
+                const name = document.createElement('span');
+                name.className = 'text-break';
+                name.textContent = f.name + ' (' + fmt(f.size) + ')';
+                const del = document.createElement('button');
+                del.type = 'button';
+                del.className = 'btn btn-sm btn-outline-danger';
+                del.innerHTML = '<i class="bi bi-x-lg"></i>';
+                del.onclick = () => {
+                    const next = new DataTransfer();
+                    Array.from(dt.files).forEach((x, j) => { if (j !== i) next.items.add(x); });
+                    dt = next;
+                    input.files = dt.files;
+                    render();
+                };
+                li.append(name, del);
+                list.appendChild(li);
+            });
+            const over = total > MAX;
+            info.textContent = dt.files.length ? dt.files.length + ' ملف • ' + fmt(total) : '';
+            if (over) info.textContent += ' — تجاوز الحد الأقصى (25 ميجابايت)';
+            info.className = 'form-text' + (over ? ' text-danger fw-bold' : '');
+            submitBtn.disabled = over;
+        }
+        input.addEventListener('change', () => {
+            Array.from(input.files).forEach(f => dt.items.add(f));
+            input.files = dt.files;
+            render();
+        });
+    })();
 </script>
 {% endblock %}
