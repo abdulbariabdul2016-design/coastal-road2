@@ -18,7 +18,7 @@
         <div class="col-6 col-md-2"><div class="text-muted small">درجة الحرارة</div><div class="fw-bold">{% if report.temperature is not none %}{{ report.temperature }} °م{% else %}-{% endif %}</div></div>
         <div class="col-6 col-md-2"><div class="text-muted small">نوع العمل</div><div class="fw-bold">{{ report.work_type or '-' }}</div></div>
         <div class="col-12 col-md-3"><div class="text-muted small">المحطة</div>
-            <div class="fw-bold">من {{ report.station_from or '-' }} إلى {{ report.station_to or '-' }}</div></div>
+            <div class="fw-bold">{% if report.station_from and not report.station_to %}محطة {{ report.station_from }}{% else %}من {{ report.station_from or '-' }} إلى {{ report.station_to or '-' }}{% endif %}</div></div>
     </div>
     {% else %}
     <h5>{{ report.title }}</h5>

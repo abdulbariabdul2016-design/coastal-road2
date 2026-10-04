@@ -48,7 +48,7 @@
             <td>{{ r.reporter_name or '-' }}</td>
             <td>{% if r.temperature is not none %}{{ r.temperature }} °م{% else %}<span class="text-muted">-</span>{% endif %}</td>
             <td><span class="badge bg-primary">{{ r.work_type or '-' }}</span></td>
-            <td>{% if r.station_from or r.station_to %}من {{ r.station_from or '-' }} إلى {{ r.station_to or '-' }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
+            <td>{% if r.station_from and not r.station_to %}محطة {{ r.station_from }}{% elif r.station_from or r.station_to %}من {{ r.station_from or '-' }} إلى {{ r.station_to or '-' }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
             {% else %}
             <td>{{ r.title }}</td>
             <td>{{ r.period_start }}{% if r.period_start != r.period_end %} → {{ r.period_end }}{% endif %}</td>
@@ -113,13 +113,13 @@
                 <input type="text" id="otherWorkInput" name="work_type_other" class="form-control" maxlength="100" placeholder="اكتب نوع العمل">
               </div>
             </div>
-            <div class="col-6">
-              <label class="form-label">4. المحطة من</label>
-              <input type="text" name="station_from" class="form-control" maxlength="50" placeholder="12+500">
+            <div class="col-6" id="stationFromBox">
+              <label class="form-label" id="stationFromLabel">4. المحطة من</label>
+              <input type="text" name="station_from" id="stationFromInput" class="form-control" maxlength="50" placeholder="12+500">
             </div>
-            <div class="col-6">
+            <div class="col-6" id="stationToBox">
               <label class="form-label">المحطة إلى</label>
-              <input type="text" name="station_to" class="form-control" maxlength="50" placeholder="13+200">
+              <input type="text" name="station_to" id="stationToInput" class="form-control" maxlength="50" placeholder="13+200">
             </div>
             <div class="col-12">
               <label class="form-label">5. تقرير المهندس حسب العمل *</label>
@@ -249,6 +249,20 @@
         const box = document.getElementById('otherWorkBox');
         const inp = document.getElementById('otherWorkInput');
         const OTHER = 'أعمال أخرى';
+        const fromBox = document.getElementById('stationFromBox');
+        const toBox = document.getElementById('stationToBox');
+        const fromLabel = document.getElementById('stationFromLabel');
+        const toInput = document.getElementById('stationToInput');
+        function syncStation() {
+            // أعمال الغرف: رقم محطة واحد فقط بدل من/إلى
+            const single = sel.value.indexOf('الغرف') !== -1;
+            toBox.classList.toggle('d-none', single);
+            fromBox.classList.toggle('col-12', single);
+            fromBox.classList.toggle('col-6', !single);
+            fromLabel.textContent = single ? '4. رقم المحطة' : '4. المحطة من';
+            if (single) toInput.value = '';
+        }
+        sel.addEventListener('change', syncStation);
         function sync() {
             const other = sel.value === OTHER;
             box.classList.toggle('d-none', !other);
@@ -266,7 +280,7 @@
             }
         });
         document.getElementById('dailyReportModal').addEventListener('hidden.bs.modal', function () {
-            box.classList.add('d-none'); inp.required = false; inp.value = '';
+            box.classList.add('d-none'); inp.required = false; inp.value = ''; syncStation();
         });
     })();
 </script>
