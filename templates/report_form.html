@@ -3,16 +3,46 @@
 {% block content %}
 <div class="row justify-content-center"><div class="col-lg-8"><div class="card"><div class="card-body">
 <h3 class="mb-3">تقرير {{ REPORT_TYPES[rtype] }} جديد</h3>
-<form method="post">
+<form method="post" enctype="multipart/form-data" id="reportForm">
   <input type="hidden" name="type" value="{{ rtype }}">
-  <div class="mb-3"><label class="form-label">العنوان</label>
+  <div class="mb-3"><label class="form-label">العنوان *</label>
     <input class="form-control" name="title" required></div>
   <div class="mb-3"><label class="form-label">
-    {{ 'التاريخ' if rtype == 'daily' else 'أي تاريخ داخل الأسبوع (يبدأ من السبت)' if rtype == 'weekly' else 'أي تاريخ داخل الشهر' }}</label>
+    {{ 'التاريخ' if rtype == 'daily' else 'أي تاريخ داخل الأسبوع (يبدأ من السبت)' if rtype == 'weekly' else 'أي تاريخ داخل الشهر' }} *</label>
     <input class="form-control" type="date" name="report_date" value="{{ today }}" required></div>
-  <div class="mb-3"><label class="form-label">محتوى التقرير</label>
-    <textarea class="form-control" name="content" rows="10" required></textarea></div>
-  <button class="btn btn-primary">حفظ التقرير</button>
+
+  <div class="mb-3 border rounded p-3 bg-light">
+    <label class="form-label fw-bold" for="reportFiles"><i class="bi bi-paperclip"></i> ملف التقرير (Word / PDF / Excel) *</label>
+    <input class="form-control" type="file" name="attachments" id="reportFiles" required multiple
+           accept=".pdf,.doc,.docx,.docm,.xls,.xlsx,.xlsm,.csv">
+    <div class="form-text">اختر الملف من جهازك. الحد الأقصى لمجموع الحجم 25 ميجابايت.</div>
+    <div id="fileInfo" class="form-text"></div>
+  </div>
+
+  <div class="mb-3"><label class="form-label">ملخص أو ملاحظات (اختياري)</label>
+    <textarea class="form-control" name="content" rows="4"></textarea></div>
+
+  <button class="btn btn-primary" id="saveBtn"><i class="bi bi-save"></i> حفظ التقرير</button>
   <a class="btn btn-secondary" href="{{ url_for('reports_list', type=rtype) }}">رجوع</a>
 </form></div></div></div></div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  (function () {
+    const input = document.getElementById('reportFiles');
+    const info = document.getElementById('fileInfo');
+    const btn = document.getElementById('saveBtn');
+    const MAX = 25 * 1024 * 1024;
+    input.addEventListener('change', function () {
+      let total = 0;
+      Array.from(input.files).forEach(f => total += f.size);
+      const mb = (total / 1048576).toFixed(1);
+      const over = total > MAX;
+      info.textContent = input.files.length ? input.files.length + ' ملف • ' + mb + ' MB' + (over ? ' — تجاوز الحد الأقصى (25 ميجابايت)' : '') : '';
+      info.className = 'form-text' + (over ? ' text-danger fw-bold' : '');
+      btn.disabled = over;
+    });
+  })();
+</script>
 {% endblock %}

@@ -31,8 +31,10 @@
     </div>
     {% endif %}
 
-    <h6 class="fw-bold">{{ 'تقرير المهندس' if report.report_type == 'daily' else 'محتوى التقرير' }}</h6>
+    {% if report.content %}
+    <h6 class="fw-bold">{{ 'تقرير المهندس' if report.report_type == 'daily' else 'الملخص / الملاحظات' }}</h6>
     <div class="mb-3" style="white-space: pre-wrap;">{{ report.content }}</div>
+    {% endif %}
 
     {% if report.notes %}
     <h6 class="fw-bold">الملاحظات</h6>
