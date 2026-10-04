@@ -13,10 +13,11 @@
 <div class="card shadow-sm mb-3"><div class="card-body">
     {% if report.report_type == 'daily' %}
     <div class="row g-3 mb-3">
-        <div class="col-md-3"><div class="text-muted small">التاريخ</div><div class="fw-bold">{{ report.period_start }}</div></div>
-        <div class="col-md-3"><div class="text-muted small">اسم الشخص</div><div class="fw-bold">{{ report.reporter_name or '-' }}</div></div>
-        <div class="col-md-3"><div class="text-muted small">نوع العمل</div><div class="fw-bold">{{ report.work_type or '-' }}</div></div>
-        <div class="col-md-3"><div class="text-muted small">المحطة</div>
+        <div class="col-6 col-md-2"><div class="text-muted small">التاريخ</div><div class="fw-bold">{{ report.period_start }}</div></div>
+        <div class="col-6 col-md-3"><div class="text-muted small">اسم الشخص</div><div class="fw-bold">{{ report.reporter_name or '-' }}</div></div>
+        <div class="col-6 col-md-2"><div class="text-muted small">درجة الحرارة</div><div class="fw-bold">{% if report.temperature is not none %}{{ report.temperature }} °م{% else %}-{% endif %}</div></div>
+        <div class="col-6 col-md-2"><div class="text-muted small">نوع العمل</div><div class="fw-bold">{{ report.work_type or '-' }}</div></div>
+        <div class="col-12 col-md-3"><div class="text-muted small">المحطة</div>
             <div class="fw-bold">من {{ report.station_from or '-' }} إلى {{ report.station_to or '-' }}</div></div>
     </div>
     {% else %}

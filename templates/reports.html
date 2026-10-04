@@ -35,7 +35,7 @@
 <table class="table table-hover bg-white shadow-sm align-middle">
     <thead class="table-light">
         {% if rtype == 'daily' %}
-        <tr><th>التاريخ</th><th>اسم الشخص</th><th>نوع العمل</th><th>المحطة</th><th>مرفقات</th><th>إجراءات</th></tr>
+        <tr><th>التاريخ</th><th>اسم الشخص</th><th>الحرارة</th><th>نوع العمل</th><th>المحطة</th><th>مرفقات</th><th>إجراءات</th></tr>
         {% else %}
         <tr><th>العنوان</th><th>الفترة</th><th>كاتب التقرير</th><th>مرفقات</th><th>إجراءات</th></tr>
         {% endif %}
@@ -46,6 +46,7 @@
             {% if rtype == 'daily' %}
             <td>{{ r.period_start }}</td>
             <td>{{ r.reporter_name or '-' }}</td>
+            <td>{% if r.temperature is not none %}{{ r.temperature }} °م{% else %}<span class="text-muted">-</span>{% endif %}</td>
             <td><span class="badge bg-primary">{{ r.work_type or '-' }}</span></td>
             <td>{% if r.station_from or r.station_to %}من {{ r.station_from or '-' }} إلى {{ r.station_to or '-' }}{% else %}<span class="text-muted">-</span>{% endif %}</td>
             {% else %}
@@ -62,7 +63,7 @@
             </td>
         </tr>
         {% else %}
-        <tr><td colspan="6" class="text-center text-muted py-4">لا توجد تقارير بعد</td></tr>
+        <tr><td colspan="7" class="text-center text-muted py-4">لا توجد تقارير بعد</td></tr>
         {% endfor %}
     </tbody>
 </table>
@@ -86,23 +87,34 @@
         </div>
         <div class="modal-body">
           <div class="row g-3">
-            <div class="col-12 col-md-8">
+            <div class="col-12 col-md-5">
               <label class="form-label">1. اسم الشخص *</label>
               <input type="text" name="reporter_name" class="form-control" required value="{{ current_user.full_name }}">
             </div>
-            <div class="col-12 col-md-4">
+            <div class="col-6 col-md-3">
+              <label class="form-label">2. درجة الحرارة *</label>
+              <div class="input-group">
+                <input type="number" name="temperature" class="form-control" step="0.1" min="-20" max="70" inputmode="decimal" placeholder="35" required>
+                <span class="input-group-text">°م</span>
+              </div>
+            </div>
+            <div class="col-6 col-md-4">
               <label class="form-label">تاريخ التقرير</label>
               <input type="date" name="report_date" class="form-control" value="{{ today }}" required>
             </div>
             <div class="col-12">
-              <label class="form-label">2. نوع العمل *</label>
+              <label class="form-label">3. نوع العمل *</label>
               <select name="work_type" class="form-select" required>
                 <option value="" disabled selected>اختر نوع العمل</option>
                 {% for w in work_types %}<option value="{{ w }}">{{ w }}</option>{% endfor %}
+                {% if 'أعمال أخرى' not in work_types %}<option value="أعمال أخرى">أعمال أخرى</option>{% endif %}
               </select>
+              <div id="otherWorkBox" class="mt-2 d-none">
+                <input type="text" id="otherWorkInput" name="work_type_other" class="form-control" maxlength="100" placeholder="اكتب نوع العمل">
+              </div>
             </div>
             <div class="col-6">
-              <label class="form-label">3. المحطة من</label>
+              <label class="form-label">4. المحطة من</label>
               <input type="text" name="station_from" class="form-control" maxlength="50" placeholder="12+500">
             </div>
             <div class="col-6">
@@ -110,16 +122,16 @@
               <input type="text" name="station_to" class="form-control" maxlength="50" placeholder="13+200">
             </div>
             <div class="col-12">
-              <label class="form-label">4. تقرير المهندس حسب العمل *</label>
+              <label class="form-label">5. تقرير المهندس حسب العمل *</label>
               <textarea name="content" class="form-control" rows="5" required></textarea>
             </div>
             <div class="col-12">
-              <label class="form-label">5. الملاحظات (إن وجدت)</label>
+              <label class="form-label">6. الملاحظات (إن وجدت)</label>
               <textarea name="notes" class="form-control" rows="3"></textarea>
             </div>
             <div class="col-12">
               <div class="upload-box p-3">
-                <div class="fw-bold mb-2"><i class="bi bi-paperclip"></i> 6. المرفقات (صور، Word، PDF، Excel)</div>
+                <div class="fw-bold mb-2"><i class="bi bi-paperclip"></i> 7. المرفقات (صور، Word، PDF، Excel)</div>
                 <div class="row g-2">
                   <div class="col-12 col-sm-6">
                     <label for="attachInput" class="btn btn-primary w-100 upload-btn mb-0">
@@ -227,6 +239,35 @@
             dt = keep; input.files = dt.files; render();
         });
         camera.addEventListener('change', () => { addFiles(camera.files); camera.value = ''; });
+    })();
+</script>
+<script>
+    // خيار "أعمال أخرى": يظهر حقل لكتابة نوع العمل ويُحفظ النص المكتوب كنوع للعمل
+    (function () {
+        const sel = document.querySelector('#dailyReportModal select[name="work_type"]');
+        if (!sel) return;
+        const box = document.getElementById('otherWorkBox');
+        const inp = document.getElementById('otherWorkInput');
+        const OTHER = 'أعمال أخرى';
+        function sync() {
+            const other = sel.value === OTHER;
+            box.classList.toggle('d-none', !other);
+            inp.required = other;
+            if (other) inp.focus();
+        }
+        sel.addEventListener('change', sync);
+        sel.form.addEventListener('submit', function () {
+            if (sel.value === OTHER && inp.value.trim()) {
+                const opt = document.createElement('option');
+                opt.value = inp.value.trim();
+                opt.textContent = opt.value;
+                sel.appendChild(opt);
+                sel.value = opt.value;
+            }
+        });
+        document.getElementById('dailyReportModal').addEventListener('hidden.bs.modal', function () {
+            box.classList.add('d-none'); inp.required = false; inp.value = '';
+        });
     })();
 </script>
 {% endblock %}
