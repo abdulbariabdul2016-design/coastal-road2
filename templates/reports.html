@@ -255,11 +255,12 @@
         const toInput = document.getElementById('stationToInput');
         function syncStation() {
             // أعمال الغرف: رقم محطة واحد فقط بدل من/إلى
-            const single = sel.value.indexOf('الغرف') !== -1;
+            const single = /غرف|غرفة/.test(sel.value);
             toBox.classList.toggle('d-none', single);
             fromBox.classList.toggle('col-12', single);
             fromBox.classList.toggle('col-6', !single);
             fromLabel.textContent = single ? '4. رقم المحطة' : '4. المحطة من';
+            document.getElementById('stationFromInput').placeholder = single ? 'رقم المحطة، مثال: 12+500' : '12+500';
             if (single) toInput.value = '';
         }
         sel.addEventListener('change', syncStation);
