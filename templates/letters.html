@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% block title %}الرسائل الرسمية{% endblock %}
+{% block content %}
+{% set section = 'letters' %}{% include '_messages_tabs.html' %}
+<div class="d-flex flex-wrap gap-2 justify-content-between align-items-center mb-3">
+  <h3 class="mb-0">الرسائل الرسمية</h3>
+  <a class="btn btn-primary" href="{{ url_for('message_letter_new') }}">+ إنشاء رسالة رسمية</a>
+</div>
+<div class="card"><div class="table-responsive">
+<table class="table table-hover align-middle mb-0">
+  <thead><tr><th>الرقم الإشاري</th><th>الموضوع</th><th>الجهة المرسل إليها</th><th>التاريخ</th><th>النسخ</th><th></th></tr></thead>
+  <tbody>
+  {% for l in letters %}
+  <tr>
+    <td class="text-nowrap">{{ l.ref_number or '-' }}</td>
+    <td><a href="{{ url_for('message_letter_view', letter_id=l.id) }}">{{ l.subject }}</a></td>
+    <td>{{ l.addressee }}</td>
+    <td class="text-nowrap">{{ l.letter_date.strftime('%Y-%m-%d') }}</td>
+    <td>{{ l.cc_list|length or '-' }}</td>
+    <td class="text-nowrap">
+      <a class="btn btn-sm btn-outline-primary" href="{{ url_for('message_letter_view', letter_id=l.id) }}"><i class="bi bi-eye"></i></a>
+      <a class="btn btn-sm btn-outline-secondary" href="{{ url_for('message_letter_edit', letter_id=l.id) }}"><i class="bi bi-pencil"></i></a>
+      <form class="d-inline" method="post" action="{{ url_for('message_letter_delete', letter_id=l.id) }}" onsubmit="return confirm('حذف الرسالة الرسمية؟');">
+        <button class="btn btn-sm btn-outline-danger"><i class="bi bi-trash"></i></button></form>
+    </td>
+  </tr>
+  {% else %}
+  <tr><td colspan="6" class="text-center text-muted py-4">لا توجد رسائل رسمية</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

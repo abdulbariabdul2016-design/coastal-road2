@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}الرسائل{% endblock %}
 {% block content %}
+{% set section = 'users' %}{% include '_messages_tabs.html' %}
 <div class="d-flex justify-content-between align-items-center mb-3">
   <h3 class="mb-0">الرسائل</h3>
   <a class="btn btn-primary" href="{{ url_for('message_new') }}">+ رسالة جديدة</a>

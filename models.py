@@ -180,3 +180,22 @@ class Message(db.Model):
     deleted_by_sender = db.Column(db.Boolean, default=False)
     deleted_by_recipient = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class OfficialLetter(db.Model):
+    """رسالة رسمية صادرة (تُنشأ من الأدمن وتُطبع أو تُحمَّل بصيغة Word)"""
+    id = db.Column(db.Integer, primary_key=True)
+    subject = db.Column(db.String(250), nullable=False)       # الموضوع
+    addressee = db.Column(db.String(250), nullable=False)     # الجهة المرسل إليها
+    ref_number = db.Column(db.String(100))                    # الرقم الإشاري
+    letter_date = db.Column(db.Date, nullable=False)          # التاريخ
+    body = db.Column(db.Text, nullable=False)                 # نص الرسالة
+    cc = db.Column(db.Text)                                   # الجهات المعنية بنسخة (جهة في كل سطر)
+
+    created_by_id = db.Column(db.Integer, db.ForeignKey('user.id'))
+    created_by = db.relationship('User')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def cc_list(self):
+        return [line.strip() for line in (self.cc or '').splitlines() if line.strip()]

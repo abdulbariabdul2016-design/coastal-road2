@@ -6,9 +6,11 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, date, timedelta
 from functools import wraps
 
+from urllib.parse import quote
+
 from flask import (
     Flask, render_template, redirect, url_for, flash, request,
-    send_from_directory, abort, jsonify
+    send_from_directory, abort, jsonify, Response
 )
 from sqlalchemy import inspect, text
 from werkzeug.exceptions import RequestEntityTooLarge
@@ -20,7 +22,7 @@ from werkzeug.utils import secure_filename
 from config import Config
 import storage
 from models import (
-    db, User, Document, WorkRecord, Report, ReportAttachment, Message,
+    db, User, Document, WorkRecord, Report, ReportAttachment, Message, OfficialLetter,
     DOCUMENT_CATEGORIES, SIDES, WORK_STATUSES, WORK_TYPES,
     PERMISSIONS, PERMISSION_KEYS, REPORT_TYPES
 )
@@ -516,6 +518,97 @@ def create_app():
         db.session.commit()
         flash('تم حذف الرسالة', 'info')
         return redirect(url_for('messages_list'))
+
+    # ------------------------------------------------------------------
+    # الرسائل الرسمية (للأدمن فقط): موضوع، جهة مرسل إليها، رقم إشاري، تاريخ، نص، نسخ
+    # ------------------------------------------------------------------
+    def parse_letter_form():
+        subject = request.form.get('subject', '').strip()
+        addressee = request.form.get('addressee', '').strip()
+        ref_number = request.form.get('ref_number', '').strip()
+        body = request.form.get('body', '').strip()
+        cc = '\n'.join(l.strip() for l in request.form.get('cc', '').splitlines() if l.strip())
+        try:
+            letter_date = datetime.strptime(request.form.get('letter_date', ''), '%Y-%m-%d').date()
+        except ValueError:
+            letter_date = None
+        if not (subject and addressee and body and letter_date):
+            return None
+        return dict(subject=subject, addressee=addressee, ref_number=ref_number,
+                    body=body, cc=cc, letter_date=letter_date)
+
+    @app.route('/messages/letters')
+    @login_required
+    @permission_required('messages')
+    @admin_required
+    def messages_letters():
+        letters = OfficialLetter.query.order_by(OfficialLetter.letter_date.desc(),
+                                                OfficialLetter.id.desc()).all()
+        return render_template('letters.html', letters=letters)
+
+    @app.route('/messages/letters/new', methods=['GET', 'POST'])
+    @login_required
+    @admin_required
+    def message_letter_new():
+        if request.method == 'POST':
+            data = parse_letter_form()
+            if not data:
+                flash('أكمل الحقول المطلوبة: الموضوع، الجهة، التاريخ، نص الرسالة', 'danger')
+                return redirect(url_for('message_letter_new'))
+            letter = OfficialLetter(created_by_id=current_user.id, **data)
+            db.session.add(letter)
+            db.session.commit()
+            flash('تم حفظ الرسالة الرسمية', 'success')
+            return redirect(url_for('message_letter_view', letter_id=letter.id))
+        year = date.today().year
+        suggested = f'{year}/{OfficialLetter.query.count() + 1:03d}'
+        return render_template('letter_form.html', letter=None,
+                               today=date.today().isoformat(), suggested_ref=suggested)
+
+    @app.route('/messages/letters/<int:letter_id>/edit', methods=['GET', 'POST'])
+    @login_required
+    @admin_required
+    def message_letter_edit(letter_id):
+        letter = OfficialLetter.query.get_or_404(letter_id)
+        if request.method == 'POST':
+            data = parse_letter_form()
+            if not data:
+                flash('أكمل الحقول المطلوبة: الموضوع، الجهة، التاريخ، نص الرسالة', 'danger')
+                return redirect(url_for('message_letter_edit', letter_id=letter.id))
+            for key, value in data.items():
+                setattr(letter, key, value)
+            db.session.commit()
+            flash('تم تعديل الرسالة', 'success')
+            return redirect(url_for('message_letter_view', letter_id=letter.id))
+        return render_template('letter_form.html', letter=letter,
+                               today=date.today().isoformat(), suggested_ref='')
+
+    @app.route('/messages/letters/<int:letter_id>')
+    @login_required
+    @admin_required
+    def message_letter_view(letter_id):
+        letter = OfficialLetter.query.get_or_404(letter_id)
+        return render_template('letter_view.html', letter=letter)
+
+    @app.route('/messages/letters/<int:letter_id>/word')
+    @login_required
+    @admin_required
+    def message_letter_word(letter_id):
+        letter = OfficialLetter.query.get_or_404(letter_id)
+        html = render_template('letter_word.html', letter=letter)
+        name = quote(f'رسالة-{letter.ref_number or letter.id}'.replace('/', '-') + '.doc')
+        return Response(html, mimetype='application/msword', headers={
+            'Content-Disposition': f"attachment; filename*=UTF-8''{name}"})
+
+    @app.route('/messages/letters/<int:letter_id>/delete', methods=['POST'])
+    @login_required
+    @admin_required
+    def message_letter_delete(letter_id):
+        letter = OfficialLetter.query.get_or_404(letter_id)
+        db.session.delete(letter)
+        db.session.commit()
+        flash('تم حذف الرسالة الرسمية', 'info')
+        return redirect(url_for('messages_letters'))
 
     # ------------------------------------------------------------------
     # الأرشفة (الملفات والأوراق المحفوظة)

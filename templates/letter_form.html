@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block title %}{{ 'تعديل رسالة رسمية' if letter else 'رسالة رسمية جديدة' }}{% endblock %}
+{% block content %}
+{% set section = 'letters' %}{% include '_messages_tabs.html' %}
+<div class="row justify-content-center"><div class="col-lg-9"><div class="card"><div class="card-body">
+<h3 class="mb-3">{{ 'تعديل رسالة رسمية' if letter else 'رسالة رسمية جديدة' }}</h3>
+<form method="post">
+  <div class="row g-3">
+    <div class="col-12 col-md-6">
+      <label class="form-label">الرقم الإشاري</label>
+      <input class="form-control" name="ref_number" maxlength="100" value="{{ letter.ref_number if letter else suggested_ref }}">
+    </div>
+    <div class="col-12 col-md-6">
+      <label class="form-label">التاريخ *</label>
+      <input class="form-control" type="date" name="letter_date" required value="{{ letter.letter_date.strftime('%Y-%m-%d') if letter else today }}">
+    </div>
+    <div class="col-12">
+      <label class="form-label">الجهة المرسل إليها *</label>
+      <input class="form-control" name="addressee" maxlength="250" required placeholder="مثال: السادة / إدارة المشروع" value="{{ letter.addressee if letter else '' }}">
+    </div>
+    <div class="col-12">
+      <label class="form-label">الموضوع *</label>
+      <input class="form-control" name="subject" maxlength="250" required value="{{ letter.subject if letter else '' }}">
+    </div>
+    <div class="col-12">
+      <label class="form-label">نص الرسالة *</label>
+      <textarea class="form-control" name="body" rows="10" required>{{ letter.body if letter else '' }}</textarea>
+    </div>
+    <div class="col-12">
+      <label class="form-label">الجهات المعنية بأخذ نسخة من الرسالة</label>
+      <textarea class="form-control" name="cc" rows="3" placeholder="اكتب كل جهة في سطر مستقل">{{ letter.cc if letter and letter.cc else '' }}</textarea>
+      <div class="form-text">كل سطر يُعد جهة واحدة، وتظهر في أسفل الرسالة تحت "نسخة إلى".</div>
+    </div>
+  </div>
+  <div class="mt-4 d-flex gap-2">
+    <button class="btn btn-primary"><i class="bi bi-save"></i> حفظ</button>
+    <a class="btn btn-secondary" href="{{ url_for('messages_letters') }}">رجوع</a>
+  </div>
+</form></div></div></div></div>
+{% endblock %}

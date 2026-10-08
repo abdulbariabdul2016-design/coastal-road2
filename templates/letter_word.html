@@ -1,0 +1,29 @@
+<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:w="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">
+<head><meta charset="utf-8"><title>{{ letter.subject }}</title>
+<style>
+  @page{size:A4;margin:2cm}
+  body{font-family:"Traditional Arabic","Arial",sans-serif;font-size:16pt;direction:rtl;text-align:right;line-height:1.8}
+  .co{font-weight:bold;font-size:18pt;margin:0}
+  .pr{font-size:12pt;color:#555;margin:0}
+  hr{border:0;border-top:3px double #0d6efd}
+  td{font-size:15pt;vertical-align:top}
+</style></head>
+<body dir="rtl">
+<p class="co">شركة العلوم التكنولوجية للخدمات والاستشارات الهندسية</p>
+<p class="pr">مشروع صيانة طريق الساحلي مصنع النجمة - كوبري القره بوللي</p>
+<hr>
+<table width="100%" dir="rtl"><tr>
+  <td align="right"><b>الرقم الإشاري:</b> {{ letter.ref_number or '........' }}</td>
+  <td align="left"><b>التاريخ:</b> {{ letter.letter_date.strftime('%Y-%m-%d') }}</td>
+</tr></table>
+<p><b>{{ letter.addressee }}</b></p>
+<p>تحية طيبة وبعد،</p>
+<p><b><u>الموضوع: {{ letter.subject }}</u></b></p>
+{% for line in letter.body.splitlines() %}<p style="text-align:justify;margin:0 0 6pt">{{ line or '&nbsp;'|safe }}</p>{% endfor %}
+<p>وتفضلوا بقبول فائق الاحترام والتقدير،،،</p>
+<p style="text-align:left"><b>{{ letter.created_by.full_name if letter.created_by else '' }}</b><br><br>التوقيع / الختم</p>
+{% if letter.cc_list %}
+<p><b>نسخة إلى:</b></p>
+<ol>{% for c in letter.cc_list %}<li>{{ c }}</li>{% endfor %}</ol>
+{% endif %}
+</body></html>
